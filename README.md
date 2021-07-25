@@ -1,9 +1,9 @@
 [![Dart](https://img.shields.io/badge/Dart-0175C2?logo=dart&logoColor=white)](https://pub.dev/packages/fancy_text_reveal)  ![Flutter](https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white)
 
 
-# Flutter Preload Videos
 
-![lib](images/logic.png)
+![lib](images/poster.png)
+# Flutter Preload Videos
 
 
 ### Introduction 🚀
@@ -14,6 +14,11 @@
 
 
 ![Output sample](images/demo.gif)
+
+### Logic 🎯
+
+![lib](images/logic.png)
+
 
 
 
