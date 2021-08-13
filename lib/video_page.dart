@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_preload_videos/bloc/preload_bloc.dart';
+import 'package:flutter_preload_videos/provider/preload_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPage extends StatelessWidget {
@@ -9,16 +9,15 @@ class VideoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: BlocBuilder<PreloadBloc, PreloadState>(
-        builder: (context, state) {
+      child: Consumer<PreloadProvider>(
+        builder: (context, provider, _) {
           return PageView.builder(
-            itemCount: state.urls.length,
+            itemCount: provider.urls.length,
             scrollDirection: Axis.vertical,
-            onPageChanged: (index) => BlocProvider.of<PreloadBloc>(context)
-                .add(PreloadEvent.onVideoIndexChanged(index)),
+            onPageChanged: (index) => provider.onVideoIndexChanged(index),
             itemBuilder: (context, index) {
-              return state.focusedIndex == index
-                  ? VideoPlayer(state.controllers[index]!)
+              return provider.focusedIndex == index
+                  ? VideoPlayer(provider.controllers[index]!)
                   : const SizedBox();
             },
           );
