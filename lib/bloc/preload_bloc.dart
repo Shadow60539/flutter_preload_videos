@@ -2,14 +2,20 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter_preload_videos/injection.dart';
+import 'package:flutter_preload_videos/service/api_service.dart';
+import 'package:flutter_preload_videos/core/constants.dart';
+import 'package:flutter_preload_videos/main.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:injectable/injectable.dart';
 import 'package:video_player/video_player.dart';
 
+part 'preload_bloc.freezed.dart';
 part 'preload_event.dart';
 part 'preload_state.dart';
-part 'preload_bloc.freezed.dart';
 
+@injectable
+@prod
 class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
   PreloadBloc() : super(PreloadState.initial());
 
@@ -18,17 +24,36 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
     PreloadEvent event,
   ) async* {
     yield* event.map(
-      initialize: (e) async* {
+      setLoading: (e) async* {
+        yield state.copyWith(isLoading: true);
+      },
+      getVideosFromApi: (e) async* {
+        /// Fetch first 5 videos from api
+        final List<String> _urls = await ApiService.getVideos();
+        state.urls.addAll(_urls);
+
         /// Initialize 1st video
         await _initializeControllerAtIndex(0);
 
         /// Play 1st video
         _playControllerAtIndex(0);
 
-        /// Initialize 2nd vide
+        /// Initialize 2nd video
         await _initializeControllerAtIndex(1);
+
+        yield state.copyWith(reloadCounter: state.reloadCounter + 1);
       },
+      // initialize: (e) async* {},
       onVideoIndexChanged: (e) async* {
+        /// Condition to fetch new videos
+        final bool shouldFetch = (e.index + kPreloadLimit) % kNextLimit == 0 &&
+            state.urls.length == e.index + kPreloadLimit;
+
+        if (shouldFetch) {
+          createIsolate(e.index);
+        }
+
+        /// Next / Prev video decider
         if (e.index > state.focusedIndex) {
           _playNext(e.index);
         } else {
@@ -36,6 +61,17 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
         }
 
         yield state.copyWith(focusedIndex: e.index);
+      },
+      updateUrls: (e) async* {
+        /// Add new urls to current urls
+        state.urls.addAll(e.urls);
+
+        /// Initialize new url
+        _initializeControllerAtIndex(state.focusedIndex + 1);
+
+        yield state.copyWith(
+            reloadCounter: state.reloadCounter + 1, isLoading: false);
+        log('🚀🚀🚀 NEW VIDEOS ADDED');
       },
     );
   }
@@ -114,12 +150,14 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
   void _disposeControllerAtIndex(int index) {
     if (state.urls.length > index && index >= 0) {
       /// Get controller at [index]
-      final VideoPlayerController _controller = state.controllers[index]!;
+      final VideoPlayerController? _controller = state.controllers[index];
 
       /// Dispose controller
-      _controller.dispose();
+      _controller?.dispose();
 
-      state.controllers.remove(_controller);
+      if (_controller != null) {
+        state.controllers.remove(_controller);
+      }
 
       log('🚀🚀🚀 DISPOSED $index');
     }
