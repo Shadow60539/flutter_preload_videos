@@ -3,12 +3,16 @@
 
 
 ![lib](images/poster.png)
-# Flutter Preload Videos
+# Flutter Preload Videos from API
 
 
 ### Introduction 🚀
 
-> Preloading logic to reduce video initialization 
+> Preloading logic to reduce video initialization using isolate to fetch videos in the background so that the video experience is not disturbed.
+
+> Without the use of isolate, the video will be paused whenever there is an API call because the main thread will be busy fetching new video URLs.
+
+> More about isolate: 🌐 https://blog.codemagic.io/understanding-flutter-isolates/
 
 ### Demo 👀
 
@@ -31,7 +35,7 @@ To clone and run this application, you'll need [git](https://git-scm.com) and [f
 $ git clone https://github.com/Shadow60539/flutter_preload_videos.git
 
 # Go into the repository
-$ cd flutter_preload_videos.git
+$ cd flutter_preload_videos
 
 # Install dependencies
 $ flutter packages get
