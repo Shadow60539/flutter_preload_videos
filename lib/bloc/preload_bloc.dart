@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:flutter_preload_videos/injection.dart';
 import 'package:flutter_preload_videos/service/api_service.dart';
 import 'package:flutter_preload_videos/core/constants.dart';
 import 'package:flutter_preload_videos/main.dart';
@@ -17,17 +16,16 @@ part 'preload_state.dart';
 @injectable
 @prod
 class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
-  PreloadBloc() : super(PreloadState.initial());
+  PreloadBloc() : super(PreloadState.initial()) {
+    on(_mapEventToState);
+  }
 
-  @override
-  Stream<PreloadState> mapEventToState(
-    PreloadEvent event,
-  ) async* {
-    yield* event.map(
-      setLoading: (e) async* {
-        yield state.copyWith(isLoading: true);
+  void _mapEventToState(PreloadEvent event, Emitter<PreloadState> emit) async {
+    await event.map(
+      setLoading: (e) {
+        emit(state.copyWith(isLoading: true));
       },
-      getVideosFromApi: (e) async* {
+      getVideosFromApi: (e) async {
         /// Fetch first 5 videos from api
         final List<String> _urls = await ApiService.getVideos();
         state.urls.addAll(_urls);
@@ -41,10 +39,10 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
         /// Initialize 2nd video
         await _initializeControllerAtIndex(1);
 
-        yield state.copyWith(reloadCounter: state.reloadCounter + 1);
+        emit(state.copyWith(reloadCounter: state.reloadCounter + 1));
       },
       // initialize: (e) async* {},
-      onVideoIndexChanged: (e) async* {
+      onVideoIndexChanged: (e) {
         /// Condition to fetch new videos
         final bool shouldFetch = (e.index + kPreloadLimit) % kNextLimit == 0 &&
             state.urls.length == e.index + kPreloadLimit;
@@ -60,17 +58,17 @@ class PreloadBloc extends Bloc<PreloadEvent, PreloadState> {
           _playPrevious(e.index);
         }
 
-        yield state.copyWith(focusedIndex: e.index);
+        emit(state.copyWith(focusedIndex: e.index));
       },
-      updateUrls: (e) async* {
+      updateUrls: (e) {
         /// Add new urls to current urls
         state.urls.addAll(e.urls);
 
         /// Initialize new url
         _initializeControllerAtIndex(state.focusedIndex + 1);
 
-        yield state.copyWith(
-            reloadCounter: state.reloadCounter + 1, isLoading: false);
+        emit(state.copyWith(
+            reloadCounter: state.reloadCounter + 1, isLoading: false));
         log('🚀🚀🚀 NEW VIDEOS ADDED');
       },
     );
